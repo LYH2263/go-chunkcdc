@@ -51,7 +51,10 @@ func (s *Session) CommitFP(info ChunkInfo) error {
 	if i, ok := s.byFP[cp.FP]; ok {
 		old := s.entries[i]
 		if old.Hash != cp.Hash || old.Length != cp.Length || string(old.Data) != string(cp.Data) {
-			return fmt.Errorf("fp conflict %s", cp.FP)
+			// Same fingerprint, different content: a hash collision. Wrap
+			// ErrHashCollision so monitoring/callers can match the sentinel
+			// with errors.Is instead of grepping message text.
+			return fmt.Errorf("%w: fp conflict %s", ErrHashCollision, cp.FP)
 		}
 		return nil
 	}
