@@ -72,8 +72,15 @@ func (l *Logger) Rotate(newPath string) error {
 	if err != nil {
 		return err
 	}
-	// leak old handle
+	// Close the previous handle before swapping it out so the OS releases
+	// the old audit path. Otherwise the file stays open for the process's
+	// lifetime and external cleanup (e.g. unlink on the CI builder) fails
+	// with "file in use", leaving rotated garbage piling up on disk.
+	old := l.f
 	l.f = f
 	l.path = newPath
+	if old != nil {
+		_ = old.Close()
+	}
 	return nil
 }
