@@ -6,14 +6,20 @@ import (
 )
 
 func runIngestStream(ctx context.Context, s *Session, r io.Reader) error {
-	_ = ctx
+	if err := ctx.Err(); err != nil {
+		return err
+	}
 	b, err := io.ReadAll(r)
 	if err != nil {
+		return err
+	}
+	// Honor cancellation that occurred during the read before committing a new chunk.
+	if err := ctx.Err(); err != nil {
 		return err
 	}
 	return s.Ingest(b)
 }
 
 func (s *Session) IngestContext(ctx context.Context, r io.Reader) error {
-	return runIngestStream(context.Background(), s, r)
+	return runIngestStream(ctx, s, r)
 }
