@@ -21,8 +21,10 @@ func (s *Session) CloseFlushCount() int {
 	if s.closed {
 		return 0
 	}
-	s.ClearEntries()
+	// Capture the real flush count before clearing the index, otherwise the
+	// ledger's last-batch figure is always zero and reconciliation fails.
 	n := s.FlushCount()
+	s.ClearEntries()
 	s.closed = true
 	if s.audit != nil {
 		_ = s.audit.Close()
