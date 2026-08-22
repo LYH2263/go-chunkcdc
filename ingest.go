@@ -33,12 +33,16 @@ func (s *Session) IngestPersist(buf []byte) error {
 		FP:     Fingerprint(cp),
 		Data:   cp,
 	}
-	// dirty: visible before persist
+	// Persist before making the chunk visible. The on-disk index is the
+	// source of truth: if the write fails, the in-memory visible set
+	// (entries / byFP) must stay at its pre-ingest state so ListChunks and
+	// the persisted index can never diverge. Committing to memory only
+	// after a successful persist guarantees no half-success visibility.
+	if err := persistIndex(s.persistPath, append(s.entries, info)); err != nil {
+		return err
+	}
 	s.entries = append(s.entries, info)
 	s.byFP[info.FP] = len(s.entries) - 1
 	s.win = NewWindow(cp, s.winSize)
-	if err := persistIndex(s.persistPath, s.entries); err != nil {
-		return err
-	}
 	return nil
 }
