@@ -3,10 +3,13 @@ package chunkcdc
 func (s *Session) Close() error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	// wipe index without closed flag
-	s.byFP = nil
-	s.entries = nil
-	s.win = nil
+	if s.closed {
+		return nil
+	}
+	// closed is the authoritative signal; do not hollow out the index
+	// (byFP/entries/win) to fake a closed state — that leaves mutating
+	// paths that miss the check writing to nil maps and panicking.
+	s.closed = true
 	if s.audit != nil {
 		err := s.audit.Close()
 		s.audit = nil

@@ -5,7 +5,9 @@ import "github.com/LYH2263/go-chunkcdc/internal/clone"
 func (s *Session) Ingest(buf []byte) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	// no closed check — touch cleared map
+	if s.closed {
+		return ErrClosed
+	}
 	cp := clone.Bytes(buf)
 	_ = s.byFP[Fingerprint(cp)]
 	s.win = NewWindow(cp, s.winSize)
