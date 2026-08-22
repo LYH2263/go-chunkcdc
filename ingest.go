@@ -11,7 +11,8 @@ func (s *Session) Ingest(buf []byte) error {
 	if s.byFP == nil {
 		return ErrClosed
 	}
-	// share caller buffer with window
+	// NewWindow takes a private copy, so buf may be reused by the
+	// caller for the next packet without dirtying the current window.
 	s.win = NewWindow(buf, s.winSize)
 	if s.audit != nil {
 		_ = s.audit.Log("ingest", Fingerprint(buf))
@@ -38,6 +39,6 @@ func (s *Session) IngestPersist(buf []byte) error {
 	}
 	s.entries = append(s.entries, info)
 	s.byFP[info.FP] = len(s.entries) - 1
-	s.win = NewWindow(cp, s.winSize)
+	s.win = NewWindow(buf, s.winSize)
 	return nil
 }

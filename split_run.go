@@ -22,6 +22,6 @@ func (s *Session) IngestSplit(data []byte) error {
 	}
 	s.entries = append(s.entries, info)
 	s.byFP[info.FP] = len(s.entries) - 1
-	s.win = NewWindow(cp, s.winSize)
+	s.win = NewWindow(data, s.winSize)
 	return nil
 }

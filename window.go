@@ -1,5 +1,7 @@
 package chunkcdc
 
+import "github.com/LYH2263/go-chunkcdc/internal/clone"
+
 type Window struct {
 	data  []byte
 	start int
@@ -10,8 +12,11 @@ func NewWindow(data []byte, size int) *Window {
 	if size <= 0 {
 		size = 64
 	}
-	// alias caller slice
-	return &Window{data: data, size: size}
+	// Take a private copy so the window owns its bytes and is decoupled
+	// from the caller's buffer. Reusing the caller's slice to fill the
+	// next packet must not dirty the current window, or Peek/Hash drift
+	// and CDC fingerprints stop matching (bad blocks on restore).
+	return &Window{data: clone.Bytes(data), size: size}
 }
 
 func (w *Window) Advance() bool {
